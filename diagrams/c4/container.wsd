@@ -1,0 +1,72 @@
+@startuml container_diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+
+' LAYOUT_LANDSCAPE()
+' LAYOUT_LEFT_RIGHT()
+
+set separator none
+title RoommateFinder - Containers
+
+Person(AppUser, "Пользователь")
+Person(AdminUser, "Администратор")
+
+System(SupabaseClientLibrararies, "Supabase Client Libraries")
+System(SupabaseCLI, "Supabase CLI")
+System(SupabaseStudio, "Supabase Studio")
+System(S3StorageProvider, "S3 Storage Provider")
+
+System_Boundary(SupabaseBoundary, "Supabase") {
+    Container(Supabase.Kong, "Kong", "API Gateway")
+    Container(Supabase.GoTrue, "GoTrue", "Go", "API для управления пользователями и выдачи токенов SWT")
+    Container(Supabase.PostgREST, "PostgREST", "Haskell", "превращает базу данных PostgreSQL непосредственно в RESTful API.")
+    Container(Supabase.Realtime, "Realtime", "Elixir", "Прослушивание базы данных PostgreSQL в реальном времени через веб-сокеты.")
+    Container(Supabase.StorageAPI, "API хранилища", "TypeScript", "Совместимый с S3 сервис объектного хранения с Postgres и GoTrue")
+    Container(Supabase.Postgres, "Postgres", "C", "Система управления базами данных как основная часть Supabase")
+    Container(Supabase.PostgresMeta, "Postgres-Meta", "предоставление RESTful API для управления всей метаданными баз данных PostgreSQL")
+}
+
+Rel(SupabaseClientLibrararies, Supabase.Kong, "https")
+Rel(SupabaseStudio, Supabase.Kong, "https")
+Rel(SupabaseCLI, Supabase.Kong, "https")
+Rel(Supabase.Kong, Supabase.GoTrue, "/auth")
+Rel(Supabase.Kong, Supabase.PostgREST, "/rest")
+Rel(Supabase.Kong, Supabase.Realtime, "/realtime")
+Rel(Supabase.Kong, Supabase.StorageAPI, "/storage")
+Rel(Supabase.Kong, Supabase.PostgresMeta, "/pg")
+Rel(Supabase.GoTrue, Supabase.Postgres, "")
+Rel(Supabase.PostgREST, Supabase.Postgres, "")
+Rel(Supabase.Realtime, Supabase.Postgres, "")
+Rel(Supabase.StorageAPI, Supabase.Postgres, "")
+Rel(Supabase.PostgresMeta, Supabase.Postgres, "")
+Rel(Supabase.StorageAPI, S3StorageProvider, "")
+Rel(Supabase.StorageAPI, Supabase.GoTrue, "")
+
+System_Ext(YandexMapAPI, "Yandex Map API")
+System_Ext(DadataAPI, "Dadata API")
+
+Container(WebApplication, "Веб-сайт", "Next.js", "Пользовательский интерфейс")
+
+Rel(WebApplication, SupabaseClientLibrararies, "Использует")
+Rel(WebApplication, SupabaseCLI, "Генерация типов схемы базы данных typscript", "bash")
+Rel(WebApplication, DadataAPI, "Делает API-вызовы", "HTTPS")
+Rel(WebApplication, YandexMapAPI, "Делает API-вызовы", "HTTPS")
+
+System_Boundary(RecommendaionServiceBoundary, "RecommendaionService"){
+    Container(RecommendaionMLModel, "Модель машинного обучения", "Python,Sklearn,Pandas,Prisma","Предоставляет функцию генерации рекомендаций для каждой пары сосед-недвижимость в базе данных")
+    Container(RecommendaionMLModel.Scehduler, "Планировщик запуска модели", "Python, Apscheduler", "Запускает модель машинного обучения для рекомендаций по расписанию")
+
+    Rel(RecommendaionMLModel.Scehduler,RecommendaionMLModel, "Вызывает функцию `generate recommendations`")
+    Rel(RecommendaionMLModel, SupabaseClientLibrararies, "Использует")
+    Rel(RecommendaionMLModel, Supabase.Postgres, "Чтение и запись")
+    Rel(RecommendaionMLModel, Supabase.Postgres, "Генерация схемы базы данных типов Prisma", "prisma cli")
+}
+
+Rel(AppUser, WebApplication, "Использует", "HTTPS")
+Rel(AdminUser, WebApplication, "Использует", "HTTPS")
+Rel(AdminUser, SupabaseStudio, "Использует", "HTTPS")
+Rel(AdminUser, SupabaseCLI, "Использует", "HTTPS")
+
+SHOW_LEGEND(true)
+
+@enduml

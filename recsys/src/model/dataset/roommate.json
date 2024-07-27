@@ -1,0 +1,45 @@
+{
+  "id": "3ce39a38-08bc-47f4-a4e9-3add76293a29",
+  "profile": {
+    "age": 18,
+    "gender": 1,
+    "interest_areas": "machine learning,web development,cyber security"
+  },
+  "university": {
+    "university_name": "РТУ МИРЭА",
+    "geo_lat": 55.6733309,
+    "geo_lon": 37.4801249,
+    "graduation_year": 2024,
+    "speciality_code_major": 9,
+    "speciality_code_minor": 3
+  },
+  "property": {
+    "id": 321,
+    "description": "I'm offering rooms",
+    "geo_lat": 55.672255,
+    "geo_lon": 37.577238,
+    "property_type": 0,
+    "rent_price_month": 50000,
+    "stay_duration": 0,
+    "rooms_number": 2,
+    "tenants_number": 2,
+    "tenants_age": 26,
+    "rent_per_tenant": 25000,
+    "share_with": 0,
+    "available_from": "2024-06-12 00:00:00",
+    "preferences": {
+      "roommate": {
+        "get_up": 3,
+        "go_to_bed": 1,
+        "cleanliness": 2,
+        "smoker": 3,
+        "alcohol": 1,
+        "food_choice": 1,
+        "noise_level": 2,
+        "pets": 5
+      }
+    },
+    "metro.geo_lat": 55.677671,
+    "metro.geo_lon": 37.562595
+  }
+}

@@ -1,0 +1,57 @@
+@startuml
+
+left to right direction
+
+actor User #black
+
+rectangle "Authentication" as Auth {
+  User --> (Registration)
+  User --> (Login)
+  User --> (Password Recovery)
+}
+
+rectangle "Profile" as Prof {
+  User --> (Create Profile)
+  User --> (Edit Profile)
+  User --> (Upload Profile Photo)
+}
+
+rectangle "Roommate Search Ads" as RoomAds {
+  User --> (Create Roommate Search Ad)
+  User --> (Edit Roommate Search Ad)
+  User --> (Fill Room Information)
+  User --> (Automatic Address Suggestions)
+  User --> (Upload Property Photos)
+}
+
+rectangle "Room Search Ads" as RoomSearchAds {
+  User --> (Create Room Search Ad)
+  User --> (Edit Room Search Ad)
+  User --> (Automatic Address Suggestions)
+}
+
+rectangle "Search and Filtering" as Search {
+  User --> (Search Ads and Profiles)
+  User --> (Filter Ads and Profiles)
+  User --> (Display Information on Map)
+}
+
+rectangle "Recommendations" as Rec {
+  User --> (Receive Recommendations)
+  User --> (View Similar Ads)
+  User --> (View Match Percentage)
+}
+
+rectangle "Chat and Communication" as Chat {
+  User --> (Social Media Communication)
+}
+
+Auth --> Prof
+Prof --> RoomAds
+Prof --> RoomSearchAds
+RoomAds --> Search
+RoomSearchAds --> Search
+Search --> Rec
+Rec --> Chat
+
+@enduml

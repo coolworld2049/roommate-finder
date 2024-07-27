@@ -1,0 +1,46 @@
+@startuml container_diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+
+' LAYOUT_LANDSCAPE()
+LAYOUT_LEFT_RIGHT()
+
+set separator none
+title RoommateFinder - Containers
+
+Person(AppUser, "Пользователь")
+
+System_Boundary(RoommateFinderSystem, "RoommateFinder"){
+
+    System_Boundary(SupabaseBoundary, "Supabase"){
+
+        System(SupabaseClientLibrararies, "Supabase Client Libraries")
+        System(SupabaseCLI, "Supabase CLI")
+        System(SupabaseStudio, "Supabase Studio")
+    }
+
+    System_Ext(YandexMapAPI, "Yandex Map API")
+    System_Ext(DadataAPI, "Dadata API")
+
+    Container(WebApplication, "Веб-сайт", "Next.js", "Пользовательский интерфейс")
+
+    Rel(WebApplication, SupabaseClientLibrararies, "Использует")
+    Rel(WebApplication, SupabaseCLI, "Генерация typscript типов", "bash")
+    Rel(WebApplication, DadataAPI, "API-вызовы", "HTTPS")
+    Rel(WebApplication, YandexMapAPI, "API-вызовы", "HTTPS")
+
+    System_Boundary(RecommendaionServiceBoundary, "Рекомендательный сервис"){
+        Container(RecommendaionMLModel, "Модель генерации рекомендаций (Content-based)", "Python,Sklearn,Pandas,Prisma","Предоставляет функцию генерации рекомендаций для каждой пары сосед-недвижимость в базе данных")
+        Container(RecommendaionMLModel.Scehduler, "Планировщик запуска модели", "Python, Apscheduler", "Запускает модель машинного обучения для рекомендаций по расписанию")
+
+        Rel(RecommendaionMLModel.Scehduler,RecommendaionMLModel, "Вызывает функцию `generate recommendations`")
+        Rel(RecommendaionMLModel, SupabaseClientLibrararies, "Чтение и запись")
+        Rel(RecommendaionMLModel, SupabaseCLI, "Генерация pydantic схем", "bash")
+    }
+}
+
+Rel(AppUser, WebApplication, "Использует", "HTTPS")
+
+SHOW_LEGEND(true)
+
+@enduml

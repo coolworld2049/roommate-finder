@@ -1,0 +1,44 @@
+{
+  "id": "f36b1dd1-c818-439f-923b-fe08eb1180d9",
+  "profile": {
+    "age": 18,
+    "gender": 0,
+    "interest_areas": "embedded systems,natural language processing,web development"
+  },
+  "university": {
+    "university_name": "РТУ МИРЭА",
+    "geo_lat": 55.6733309,
+    "geo_lon": 37.4801249,
+    "graduation_year": 2026,
+    "speciality_code_major": 9,
+    "speciality_code_minor": 3
+  },
+  "roommate": {
+    "id": 323,
+    "description": "I'm looking for room",
+    "geo_lat": 55.663146,
+    "geo_lon": 37.482852,
+    "move_in_date": "2024-06-29 00:00:00+00:00",
+    "budget_month": 50000,
+    "rooms_number": 2.0,
+    "tenants_number": 1.5,
+    "tenants_age": 21.5,
+    "preferences": {
+      "property": {
+        "share_with": 0,
+        "property_type": 0,
+        "stay_duration": 0
+      },
+      "roommate": {
+        "get_up": 5,
+        "go_to_bed": 2,
+        "cleanliness": 2,
+        "smoker": 1,
+        "alcohol": 2,
+        "food_choice": 1,
+        "noise_level": 2,
+        "pets": 5
+      }
+    }
+  }
+}

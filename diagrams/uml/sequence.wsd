@@ -1,0 +1,27 @@
+@startuml sequence_diagram
+
+actor User as AppUser
+
+participant "Веб-сайт" as WebApp
+participant "Supabase" as Supabase
+participant "Рекомендательная система" as RecommendaionMLModel
+
+AppUser -> WebApp: Вход в систему
+WebApp -> Supabase: Аутентификация пользователя
+Supabase -> WebApp: Возврат токена
+
+AppUser -> WebApp: Посещение страницы
+WebApp -> Supabase: Запрос данных
+Supabase -> WebApp: Возврат данных
+WebApp -> AppUser: Отображение страницы
+
+RecommendaionMLModel -> Supabase: Запрос данных
+Supabase -> RecommendaionMLModel: Получение данных
+RecommendaionMLModel -> RecommendaionMLModel: Предобработка данных
+RecommendaionMLModel -> RecommendaionMLModel: Генерация рекомендаций
+RecommendaionMLModel -> Supabase: Запись рекомендаций в базу данных
+
+AppUser -> WebApp: Выход из системы
+WebApp -> Supabase: Аннулирование токена
+
+@enduml

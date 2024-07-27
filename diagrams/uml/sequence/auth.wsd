@@ -1,0 +1,81 @@
+@startuml
+title Поток аутентификации с использованием Supabase
+
+actor Пользователь
+participant Браузер
+participant "Клиентское приложение\n[Frontend]" as Клиент
+participant "Supabase Auth\n[Сервис аутентификации]" as SupabaseAuth
+participant "Supabase Postgres\n[База данных]" as SupabaseDB
+
+' Пользователь начинает регистрацию/вход
+activate Пользователь
+Пользователь -> Браузер : Открыть страницу регистрации/входа
+activate Браузер
+Браузер -> Клиент : Загрузить форму аутентификации
+activate Клиент
+Клиент -> Пользователь : Отобразить форму
+deactivate Браузер
+deactivate Клиент
+
+' Пользователь отправляет форму для регистрации/входа (/login)
+Пользователь -> Клиент : Отправить форму с данными
+activate Клиент
+Клиент -> SupabaseAuth : Запрос на регистрацию/вход
+activate SupabaseAuth
+SupabaseAuth -> SupabaseDB : Проверка данных/сохранение нового пользователя
+activate SupabaseDB
+
+alt Регистрация
+    SupabaseDB -> SupabaseAuth : Пользователь создан
+else Вход
+    SupabaseDB -> SupabaseAuth : Проверка данных пользователя
+    SupabaseDB -> SupabaseAuth : Пользователь проверен
+end
+deactivate SupabaseDB
+SupabaseAuth -> Клиент : Отправить токен аутентификации
+deactivate SupabaseAuth
+Клиент -> Браузер : Сохранить токен в localStorage
+Клиент -> Пользователь : Перенаправление по адресу redirect_url
+deactivate Клиент
+deactivate Пользователь
+
+' Пользователь запрашивает защищенный ресурс
+Пользователь -> Браузер : Запросить защищенную страницу
+activate Браузер
+Браузер -> Клиент : Загрузить защищенную страницу
+activate Клиент
+Клиент -> Браузер : Проверить наличие токена доступа
+deactivate Браузер              
+
+alt Токен доступа существует
+    Клиент -> SupabaseAuth : Отправить токен
+    activate SupabaseAuth
+    SupabaseAuth -> SupabaseDB : Проверка действительности токена
+    activate SupabaseDB
+    SupabaseDB -> SupabaseAuth : Возврат результата проверки
+    deactivate SupabaseDB
+
+    alt Токен действителен
+        SupabaseAuth -> Клиент : Токен действителен
+        deactivate SupabaseAuth
+        Клиент -> SupabaseDB : Запрос данных
+        activate SupabaseDB
+        SupabaseDB -> Клиент : Возврат данных
+        deactivate SupabaseDB
+        Клиент -> Браузер : Загрузка защищенного контента
+        Браузер -> Пользователь : Отобразить защищенный контент
+    else Токен недействителен/истек
+        SupabaseAuth -> Клиент : Возврат ошибки
+        deactivate SupabaseAuth
+        Клиент -> Браузер : Перенаправление на страницу входа
+        Браузер -> Пользователь : Отобразить страницу входа
+    end
+
+else Токен доступа отсутствует
+    Клиент -> Браузер : Перенаправление на страницу входа
+    Браузер -> Пользователь : Отобразить страницу входа
+end
+deactivate Клиент
+deactivate Браузер
+
+@enduml

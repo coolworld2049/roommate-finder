@@ -1,0 +1,36 @@
+@startuml
+
+start
+:Запрос данных из базы;
+:Нормализация и отбор признаков;
+:Создание векторов rommate (сосед) и property (жилье);
+:Масштабирование векторов;
+:Вычисление матриц косинунсного сходства (оценка сходства в диапазоне от 0 до 1) 
+по основным признаками
+по географической близости между пользователями
+по географической близости университета
+по интересам;
+
+:Объединение матриц;
+
+while (for i, row) is (not empty)
+  while (for j, score) 
+    if (оценка < 0.6) then (true)
+      :Continue;
+    else (false)
+      if (rommmate[i]["id"] == property[j]["id"]\nБюджет соседа < арендная плата за человека\nДата переезда потенциального соседа < Дата заезда) then (true)
+        :Continue;
+      else (false)
+        if (Пара roommate-property уже существует \n в таблице recommendations \n и старая оценка < новая оценка) then (true)
+              :Обновление оценки в таблице recommendatios;
+            else (false)
+              :Добавление новой записи в таблицу recommendations;
+            endif
+      endif
+    endif
+  endwhile
+endwhile
+
+stop
+
+@enduml

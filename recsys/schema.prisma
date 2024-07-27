@@ -1,0 +1,675 @@
+generator client {
+  provider                    = "prisma-client-py"
+  previewFeatures             = ["multiSchema", "views"]
+  enable_experimental_decimal = "true"
+  recursive_type_depth        = "2"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("SUPABASE_DATABASE_URL")
+  schemas  = ["auth", "public"]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model audit_log_entries {
+  instance_id String?   @db.Uuid
+  id          String    @id @db.Uuid
+  payload     Json?     @db.Json
+  created_at  DateTime? @db.Timestamptz(6)
+  ip_address  String    @default("") @db.VarChar(64)
+
+  @@index([instance_id], map: "audit_logs_instance_id_idx")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model flow_state {
+  id                     String                @id @db.Uuid
+  user_id                String?               @db.Uuid
+  auth_code              String
+  code_challenge_method  code_challenge_method
+  code_challenge         String
+  provider_type          String
+  provider_access_token  String?
+  provider_refresh_token String?
+  created_at             DateTime?             @db.Timestamptz(6)
+  updated_at             DateTime?             @db.Timestamptz(6)
+  authentication_method  String
+  auth_code_issued_at    DateTime?             @db.Timestamptz(6)
+  saml_relay_states      saml_relay_states[]
+
+  @@index([created_at(sort: Desc)])
+  @@index([auth_code], map: "idx_auth_code")
+  @@index([user_id, authentication_method], map: "idx_user_id_auth_method")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model identities {
+  provider_id     String
+  user_id         String    @db.Uuid
+  identity_data   Json
+  provider        String
+  last_sign_in_at DateTime? @db.Timestamptz(6)
+  created_at      DateTime? @db.Timestamptz(6)
+  updated_at      DateTime? @db.Timestamptz(6)
+  email           String?   @default(dbgenerated("lower((identity_data ->> 'email'::text))"))
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  users           users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([provider_id, provider], map: "identities_provider_id_provider_unique")
+  @@index([email])
+  @@index([user_id])
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model instances {
+  id              String    @id @db.Uuid
+  uuid            String?   @db.Uuid
+  raw_base_config String?
+  created_at      DateTime? @db.Timestamptz(6)
+  updated_at      DateTime? @db.Timestamptz(6)
+
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model mfa_amr_claims {
+  session_id            String   @db.Uuid
+  created_at            DateTime @db.Timestamptz(6)
+  updated_at            DateTime @db.Timestamptz(6)
+  authentication_method String
+  id                    String   @id(map: "amr_id_pk") @db.Uuid
+  sessions              sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([session_id, authentication_method], map: "mfa_amr_claims_session_id_authentication_method_pkey")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model mfa_challenges {
+  id          String      @id @db.Uuid
+  factor_id   String      @db.Uuid
+  created_at  DateTime    @db.Timestamptz(6)
+  verified_at DateTime?   @db.Timestamptz(6)
+  ip_address  String      @db.Inet
+  mfa_factors mfa_factors @relation(fields: [factor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "mfa_challenges_auth_factor_id_fkey")
+
+  @@index([created_at(sort: Desc)], map: "mfa_challenge_created_at_idx")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model mfa_factors {
+  id             String           @id @db.Uuid
+  user_id        String           @db.Uuid
+  friendly_name  String?
+  factor_type    factor_type
+  status         factor_status
+  created_at     DateTime         @db.Timestamptz(6)
+  updated_at     DateTime         @db.Timestamptz(6)
+  secret         String?
+  mfa_challenges mfa_challenges[]
+  users          users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, created_at], map: "factor_id_created_at_idx")
+  @@index([user_id])
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model refresh_tokens {
+  instance_id String?   @db.Uuid
+  id          BigInt    @id @default(autoincrement())
+  token       String?   @unique(map: "refresh_tokens_token_unique") @db.VarChar(255)
+  user_id     String?   @db.VarChar(255)
+  revoked     Boolean?
+  created_at  DateTime? @db.Timestamptz(6)
+  updated_at  DateTime? @db.Timestamptz(6)
+  parent      String?   @db.VarChar(255)
+  session_id  String?   @db.Uuid
+  sessions    sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([instance_id])
+  @@index([instance_id, user_id])
+  @@index([parent])
+  @@index([session_id, revoked])
+  @@index([updated_at(sort: Desc)])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model saml_providers {
+  id                String        @id @db.Uuid
+  sso_provider_id   String        @db.Uuid
+  entity_id         String        @unique
+  metadata_xml      String
+  metadata_url      String?
+  attribute_mapping Json?
+  created_at        DateTime?     @db.Timestamptz(6)
+  updated_at        DateTime?     @db.Timestamptz(6)
+  name_id_format    String?
+  sso_providers     sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model saml_relay_states {
+  id              String        @id @db.Uuid
+  sso_provider_id String        @db.Uuid
+  request_id      String
+  for_email       String?
+  redirect_to     String?
+  created_at      DateTime?     @db.Timestamptz(6)
+  updated_at      DateTime?     @db.Timestamptz(6)
+  flow_state_id   String?       @db.Uuid
+  flow_state      flow_state?   @relation(fields: [flow_state_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sso_providers   sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)])
+  @@index([for_email])
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model schema_migrations {
+  version String @id @db.VarChar(255)
+
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model sessions {
+  id             String           @id @db.Uuid
+  user_id        String           @db.Uuid
+  created_at     DateTime?        @db.Timestamptz(6)
+  updated_at     DateTime?        @db.Timestamptz(6)
+  factor_id      String?          @db.Uuid
+  aal            aal_level?
+  not_after      DateTime?        @db.Timestamptz(6)
+  refreshed_at   DateTime?        @db.Timestamp(6)
+  user_agent     String?
+  ip             String?          @db.Inet
+  tag            String?
+  mfa_amr_claims mfa_amr_claims[]
+  refresh_tokens refresh_tokens[]
+  users          users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([not_after(sort: Desc)])
+  @@index([user_id])
+  @@index([user_id, created_at], map: "user_id_created_at_idx")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model sso_domains {
+  id              String        @id @db.Uuid
+  sso_provider_id String        @db.Uuid
+  domain          String
+  created_at      DateTime?     @db.Timestamptz(6)
+  updated_at      DateTime?     @db.Timestamptz(6)
+  sso_providers   sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model sso_providers {
+  id                String              @id @db.Uuid
+  resource_id       String?
+  created_at        DateTime?           @db.Timestamptz(6)
+  updated_at        DateTime?           @db.Timestamptz(6)
+  saml_providers    saml_providers[]
+  saml_relay_states saml_relay_states[]
+  sso_domains       sso_domains[]
+
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model users {
+  instance_id                 String?           @db.Uuid
+  id                          String            @id @db.Uuid
+  aud                         String?           @db.VarChar(255)
+  role                        String?           @db.VarChar(255)
+  email                       String?           @db.VarChar(255)
+  encrypted_password          String?           @db.VarChar(255)
+  email_confirmed_at          DateTime?         @db.Timestamptz(6)
+  invited_at                  DateTime?         @db.Timestamptz(6)
+  confirmation_token          String?           @db.VarChar(255)
+  confirmation_sent_at        DateTime?         @db.Timestamptz(6)
+  recovery_token              String?           @db.VarChar(255)
+  recovery_sent_at            DateTime?         @db.Timestamptz(6)
+  email_change_token_new      String?           @db.VarChar(255)
+  email_change                String?           @db.VarChar(255)
+  email_change_sent_at        DateTime?         @db.Timestamptz(6)
+  last_sign_in_at             DateTime?         @db.Timestamptz(6)
+  raw_app_meta_data           Json?
+  raw_user_meta_data          Json?
+  is_super_admin              Boolean?
+  created_at                  DateTime?         @db.Timestamptz(6)
+  updated_at                  DateTime?         @db.Timestamptz(6)
+  phone                       String?           @unique
+  phone_confirmed_at          DateTime?         @db.Timestamptz(6)
+  phone_change                String?           @default("")
+  phone_change_token          String?           @default("") @db.VarChar(255)
+  phone_change_sent_at        DateTime?         @db.Timestamptz(6)
+  confirmed_at                DateTime?         @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
+  email_change_token_current  String?           @default("") @db.VarChar(255)
+  email_change_confirm_status Int?              @default(0) @db.SmallInt
+  banned_until                DateTime?         @db.Timestamptz(6)
+  reauthentication_token      String?           @default("") @db.VarChar(255)
+  reauthentication_sent_at    DateTime?         @db.Timestamptz(6)
+  is_sso_user                 Boolean           @default(false)
+  deleted_at                  DateTime?         @db.Timestamptz(6)
+  is_anonymous                Boolean           @default(false)
+  identities                  identities[]
+  mfa_factors                 mfa_factors[]
+  one_time_tokens             one_time_tokens[]
+  sessions                    sessions[]
+  profiles                    profiles?
+
+  @@index([instance_id])
+  @@index([is_anonymous])
+  @@schema("auth")
+}
+
+model amenities {
+  id                 BigInt               @id @default(autoincrement())
+  category           category_type
+  name               String
+  icon_svg           String?
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  property_amenities property_amenities[]
+  room_amenities     room_amenities[]
+
+  @@schema("public")
+}
+
+model preferences {
+  id                      BigInt                    @id @default(autoincrement())
+  category                category_type
+  name                    String                    @unique
+  options                 String[]
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  property_in_preferences property_in_preferences[]
+  roommate_in_preferences roommate_in_preferences[]
+
+  @@schema("public")
+}
+
+model profile_universities {
+  id                           BigInt                        @id @default(autoincrement())
+  profile_id                   String                        @unique @db.Uuid
+  university_name              String
+  university_address           String
+  geo_lat                      Decimal?                      @db.Decimal(14, 11)
+  geo_lon                      Decimal?                      @db.Decimal(14, 11)
+  graduation_year              Int
+  specialty_id                 BigInt?
+  created_at                   DateTime?                     @default(now()) @db.Timestamptz(6)
+  profiles                     profiles                      @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  higher_education_specialties higher_education_specialties? @relation(fields: [specialty_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model profiles {
+  id                   String                @id @db.Uuid
+  full_name            String
+  dob                  DateTime              @db.Date
+  gender               gender
+  avatar               String?
+  bio                  String?
+  interest_areas       String[]
+  created_at           DateTime?             @default(now()) @db.Timestamptz(6)
+  profile_socials      profile_socials?
+  profile_universities profile_universities?
+  users                users                 @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  properties           properties?
+  roommates            roommates?
+
+  @@schema("public")
+}
+
+model properties {
+  id                      BigInt                    @id @default(autoincrement())
+  profile_id              String                    @unique @db.Uuid
+  title                   String
+  description             String?
+  images                  String[]
+  address                 String
+  geo_lat                 Decimal?                  @db.Decimal(14, 11)
+  geo_lon                 Decimal?                  @db.Decimal(14, 11)
+  address_data            Json?
+  nearest_metro_station   Json?
+  property_type           property_type
+  bathrooms_number        Int
+  rent_price_month        Int
+  stay_duration           stay_duration
+  bills_included          Boolean                   @default(false)
+  deposit_amount          Int?
+  advertising_as          advertising_as
+  status                  ad_status                 @default(active)
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  profiles                profiles                  @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  property_amenities      property_amenities[]
+  property_in_preferences property_in_preferences[]
+  recommendations         recommendations[]
+  rooms                   rooms[]
+
+  @@schema("public")
+}
+
+model property_amenities {
+  id          BigInt     @id @default(autoincrement())
+  property_id BigInt
+  amenity_id  BigInt
+  value       Boolean    @default(false)
+  created_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  amenities   amenities  @relation(fields: [amenity_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  properties  properties @relation(fields: [property_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([property_id, amenity_id])
+  @@schema("public")
+}
+
+model property_in_preferences {
+  id            BigInt      @id @default(autoincrement())
+  property_id   BigInt
+  preference_id BigInt
+  value         String
+  created_at    DateTime?   @default(now()) @db.Timestamptz(6)
+  preferences   preferences @relation(fields: [preference_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  properties    properties  @relation(fields: [property_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([property_id, preference_id])
+  @@schema("public")
+}
+
+model room_amenities {
+  id         BigInt    @id @default(autoincrement())
+  room_id    BigInt
+  amenity_id BigInt
+  value      Boolean   @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  amenities  amenities @relation(fields: [amenity_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  rooms      rooms     @relation(fields: [room_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([room_id, amenity_id])
+  @@schema("public")
+}
+
+model room_tenants {
+  id         BigInt    @id @default(autoincrement())
+  room_id    BigInt
+  full_name  String
+  age        Int       @db.SmallInt
+  gender     gender
+  avatar     String?
+  bio        String?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  rooms      rooms     @relation(fields: [room_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model roommate_in_preferences {
+  id            BigInt      @id @default(autoincrement())
+  roommate_id   BigInt
+  preference_id BigInt
+  value         String
+  created_at    DateTime?   @default(now()) @db.Timestamptz(6)
+  preferences   preferences @relation(fields: [preference_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roommates     roommates   @relation(fields: [roommate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([roommate_id, preference_id])
+  @@schema("public")
+}
+
+model roommates {
+  id                      BigInt                    @id @default(autoincrement())
+  profile_id              String                    @unique @db.Uuid
+  title                   String
+  description             String?
+  address                 String
+  address_data            Json?
+  geo_lat                 Decimal?                  @db.Decimal(14, 11)
+  geo_lon                 Decimal?                  @db.Decimal(14, 11)
+  move_in_date            DateTime                  @db.Date
+  budget_month            Int
+  rooms_number            Int[]
+  tenants_number          Int[]
+  tenants_age             Int[]
+  status                  ad_status                 @default(active)
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  recommendations         recommendations[]
+  roommate_in_preferences roommate_in_preferences[]
+  profiles                profiles                  @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model rooms {
+  id             BigInt           @id @default(autoincrement())
+  property_id    BigInt
+  title          String
+  description    String?
+  images         String[]
+  room_type      room_type
+  room_size      room_size?
+  status         ad_status        @default(active)
+  available_from DateTime?        @db.Date
+  created_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  room_amenities room_amenities[]
+  room_tenants   room_tenants[]
+  properties     properties       @relation(fields: [property_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+model higher_education_specialties {
+  id                   BigInt                 @id @default(autoincrement())
+  code                 String                 @unique
+  area                 String
+  qualification        String
+  profile_universities profile_universities[]
+
+  @@schema("public")
+}
+
+model interest_areas {
+  id         BigInt    @id @default(autoincrement())
+  name       String    @unique
+  icon_svg   String?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model one_time_tokens {
+  id         String              @id @db.Uuid
+  user_id    String              @db.Uuid
+  token_type one_time_token_type
+  token_hash String
+  relates_to String
+  created_at DateTime            @default(now()) @db.Timestamp(6)
+  updated_at DateTime            @default(now()) @db.Timestamp(6)
+  users      users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, token_type])
+  @@index([relates_to], map: "one_time_tokens_relates_to_hash_idx", type: Hash)
+  @@index([token_hash], map: "one_time_tokens_token_hash_hash_idx", type: Hash)
+  @@schema("auth")
+}
+
+model recommendations {
+  id          BigInt     @id @default(autoincrement())
+  property_id BigInt
+  roommate_id BigInt
+  score       Float
+  created_at  DateTime?  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime   @default(now()) @db.Timestamptz(6)
+  properties  properties @relation(fields: [property_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roommates   roommates  @relation(fields: [roommate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([property_id, roommate_id])
+  @@schema("public")
+}
+
+model profile_socials {
+  id         BigInt   @id @default(autoincrement())
+  profile_id String   @unique @db.Uuid
+  telegram   String?
+  vk         String?
+  profiles   profiles @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("public")
+}
+
+/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+view property_recommendations_view {
+  property_id     BigInt?
+  recommendations Json?   @db.Json
+
+  @@ignore
+  @@schema("public")
+}
+
+/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+view roommate_recommendations_view {
+  roommate_id     BigInt?
+  recommendations Json?   @db.Json
+
+  @@ignore
+  @@schema("public")
+}
+
+enum aal_level {
+  aal1
+  aal2
+  aal3
+
+  @@schema("auth")
+}
+
+enum code_challenge_method {
+  s256
+  plain
+
+  @@schema("auth")
+}
+
+enum factor_status {
+  unverified
+  verified
+
+  @@schema("auth")
+}
+
+enum factor_type {
+  totp
+  webauthn
+
+  @@schema("auth")
+}
+
+enum ad_status {
+  active
+  inactive
+  paused
+
+  @@schema("public")
+}
+
+enum advertising_as {
+  tenant
+  owner
+  live_in_landlord
+
+  @@schema("public")
+}
+
+enum category_type {
+  property
+  room
+  roommate
+
+  @@schema("public")
+}
+
+enum gender {
+  male
+  female
+  unknown
+
+  @@schema("public")
+}
+
+enum property_type {
+  apartment
+  house
+  townhouse
+  loft
+  studio
+
+  @@schema("public")
+}
+
+enum room_size {
+  small
+  medium
+  large
+
+  @@schema("public")
+}
+
+enum room_type {
+  private
+  shared
+
+  @@schema("public")
+}
+
+enum share_with {
+  male
+  female
+  no_one
+  anyone
+
+  @@schema("public")
+}
+
+enum stay_duration {
+  semester
+  two_semester
+  flexible
+
+  @@schema("public")
+}
+
+enum one_time_token_type {
+  confirmation_token
+  reauthentication_token
+  recovery_token
+  email_change_token_new
+  email_change_token_current
+  phone_change_token
+
+  @@schema("auth")
+}

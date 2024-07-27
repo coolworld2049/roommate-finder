@@ -1,0 +1,60 @@
+@startuml classes
+set namespaceSeparator none
+class "ContentBasedRecommendation" as src.model.__main__.ContentBasedRecommendation {
+  logger : Logger
+  max_days : int
+  max_distance_km : int
+  threshold : float
+  __init__(max_distance_km, max_days, threshold, _logger)
+  create_feature_vector(entity: pd.Series, entity_type: str)
+  date_similarity(roommate: pd.Series, property: pd.Series)
+  generate_recommendations(df: pd.DataFrame)
+  geo_similarity(roommate: pd.Series, property: pd.Series)
+  geo_similarity_university(roommate: pd.Series, property: pd.Series)
+  interests_similarity(roommate: pd.Series, property: pd.Series)
+  price_similarity(roommate: pd.Series, property: pd.Series)
+  store_recommendations(similarity_matrix, roommate_df, property_df)
+}
+class "DatasetProcessor" as src.model.preprocesor.DatasetProcessor {
+  dataset
+  db_enums : dict[str, typing.Any]
+  db_preferences : preferences
+  profile : profiles
+  __encode_model_preferences(in_preferences: list[models.property_in_preferences] | list[models.roommate_in_preferences])
+  __init__(profile: models.profiles, db_enums: dict[str, typing.Any], db_preferences: models.preferences)
+  _determine_property_share_with(summary: PropertySummarySchema) -> enums.share_with
+  _encode_enum(data: dict)
+  _get_property_summary()
+  build()
+  convert_values(arr: list)
+  dob_to_age(dob: datetime)
+  process_profile()
+  process_profile_university()
+  process_property()
+  process_roommate()
+}
+class "DatasetSchema" as src.model.preprocesor.DatasetSchema {
+  id : str
+  profile : dict | None
+  property : dict | None
+  roommate : dict | None
+  university : dict | None
+}
+class "Preprocessor" as src.model.preprocesor.Preprocessor {
+  prisma : Prisma
+  __init__(prisma: Prisma)
+  dataset(take: int | None, skip: int | None)
+  execute_sql_query(sql_file_name: typing.Literal['enums'])
+}
+class "PropertySummarySchema" as src.model.preprocesor.PropertySummarySchema {
+  available_from_max : date | None
+  available_from_min : date | None
+  gender_female_count : int | None
+  gender_male_count : int | None
+  rent_per_tenant : int | None
+  rooms_number : int | None
+  tenants_age : int | None
+  tenants_number : int | None
+}
+src.model.preprocesor.DatasetSchema --* src.model.preprocesor.DatasetProcessor : dataset
+@enduml

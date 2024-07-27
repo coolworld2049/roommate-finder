@@ -1,0 +1,25 @@
+version: '3.9'
+
+networks:
+  default:
+    driver: bridge
+  supabase_default:
+    external: true
+
+services:
+  app:
+    pull_policy: never
+    image: recommendation_service:latest
+    build: .
+    command: python -m scheduler
+    env_file:
+      - .env.prod
+    environment:
+      - IS_DEBUG=True
+      - HOST=0.0.0.0
+      - PORT=8001
+    networks:
+      - default
+      - supabase_default
+    ports:
+      - "8001:8001"

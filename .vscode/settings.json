@@ -1,0 +1,14 @@
+{
+  "editor.wordWrap": "on",
+  "sql-formatter.uppercase": false,
+  "sql-formatter.dialect": "postgresql",
+  "sql-formatter.linesBetweenQueries": 1,
+  "[sql]": {
+    "editor.defaultFormatter": "lea21st.vscode-sql-formatter"
+  },
+  "python.analysis.typeCheckingMode": "basic",
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  }
+}

@@ -1,0 +1,44 @@
+@startuml sequence_diagram
+
+actor Пользователь as User
+
+participant "Веб-приложение" as WebApp
+participant "Supabase JS\nклиент" as SupabaseJSClient
+participant "Supabase Python\nклиент" as SupabasePythonClient
+participant "Supabase\nKong" as Kong
+participant "Supabase\nPostgres" as Postgres
+participant "Модель машинного\nобучения для рекомендаций" as RecommendaionMLModel
+
+User -> WebApp: Авторизация
+WebApp -> SupabaseJSClient: Подтверждение пользователя
+SupabaseJSClient -> Kong: /auth
+Kong -> GoTrue: Проверка учетных данных
+GoTrue -> Postgres: Запрос данных пользователя
+Postgres -> GoTrue: Возврат данных пользователя
+GoTrue -> Kong: Возврат токена аутентификации
+Kong -> SupabaseJSClient: Возврат токена
+SupabaseJSClient -> WebApp: Редирект на \nуказанный redirect url
+
+WebApp -> RecommendaionMLModel: Запрос рекомендаций
+RecommendaionMLModel -> SupabasePythonClient: Получение данных
+SupabasePythonClient -> Kong: /rest
+Kong -> PostgREST: Получение данных
+PostgREST -> Postgres: Запрос данных
+Postgres -> PostgREST: Возврат данных
+PostgREST -> Kong: Возврат данных
+Kong -> SupabasePythonClient: Возврат данных
+SupabasePythonClient -> RecommendaionMLModel: Данные
+RecommendaionMLModel -> RecommendaionMLModel: Генерация рекомендаций
+RecommendaionMLModel -> WebApp: Возврат рекомендаций
+WebApp -> User: Отображение рекомендаций
+
+User -> WebApp: Выход
+WebApp -> SupabaseJSClient: Отмена токена
+SupabaseJSClient -> Kong: /auth/logout
+Kong -> GoTrue: Отмена токена
+GoTrue -> Postgres: Обновление статуса токена
+GoTrue -> Kong: Подтверждение выхода
+Kong -> SupabaseJSClient: Подтверждение выхода
+SupabaseJSClient -> WebApp: Подтверждение выхода
+
+@enduml

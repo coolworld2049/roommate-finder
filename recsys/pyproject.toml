@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "recommendation-service"
+version = "0.1.0"
+description = ""
+authors = ["coolworld2049 <coolworld2049@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+pandas = "^2.2.2"
+scikit-learn = "^1.4.1.post1"
+mimesis = "^16.0.0"
+numpy = "^1.26.4"
+pydantic = "2.4.2"
+pydantic-settings = "2.0.3"
+prisma = "^0.13.1"
+loguru = "^0.7.2"
+supabase = "^2.4.5"
+apscheduler = "^3.10.4"
+nest-asyncio = "^1.6.0"
+geopy = "^2.4.1"
+gender-guesser = "^0.4.0"
+python-dateutil = "^2.9.0.post0"
+psycopg2 = "^2.9.9"
+plombery = "^0.4.1"
+matplotlib = "^3.9.0"
+seaborn = "^0.13.2"
+blockdiag = "^3.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^3.2.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,13 @@
+version: '3.9'
+
+services:
+  app:
+    image: recommendation_service:latest
+    command: python -m scheduler
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8001
+    env_file:
+      - .env
+    ports:
+      - "8001:8001"

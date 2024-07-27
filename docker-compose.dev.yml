@@ -1,0 +1,22 @@
+version: '3.9'
+
+networks:
+  default:
+    driver: bridge
+  supabase_default:
+    external: true
+
+services:
+  app:
+    build:
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3030:3030"
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+    networks:
+      - default
+      - supabase_default

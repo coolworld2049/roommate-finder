@@ -1,0 +1,9 @@
+@startuml packages
+set namespaceSeparator none
+package "src.model" as src.model {
+}
+package "src.model.__main__" as src.model.__main__ {
+}
+package "src.model.preprocesor" as src.model.preprocesor {
+}
+@enduml
